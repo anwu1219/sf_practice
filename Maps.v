@@ -186,8 +186,8 @@ Proof. reflexivity. Qed.
 
 Lemma t_apply_empty:  forall A x v, @t_empty A v x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  reflexivity.
+Qed.
 
 (** **** Exercise: 2 stars, optional (t_update_eq)  *)
 (** Next, if we update a map [m] at a key [x] with a new value [v]
@@ -197,8 +197,10 @@ Proof.
 Lemma t_update_eq : forall A (m: total_map A) x v,
   (t_update m x v) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros; unfold t_update. 
+  rewrite <- beq_id_refl.
+  reflexivity.
+Qed.
 
 (** **** Exercise: 2 stars, optional (t_update_neq)  *)
 (** On the other hand, if we update a map [m] at a key [x1] and then
@@ -210,8 +212,12 @@ Theorem t_update_neq : forall (X:Type) v x1 x2
   x1 <> x2 ->
   (t_update m x1 v) x2 = m x2.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  unfold t_update.
+  apply false_beq_id in H.
+  rewrite H; reflexivity.
+Qed.
+
 
 (** **** Exercise: 2 stars, optional (t_update_shadow)  *)
 (** If we update a map [m] at a key [x] with a value [v1] and then
@@ -224,6 +230,7 @@ Lemma t_update_shadow : forall A (m: total_map A) v1 v2 x,
     t_update (t_update m x v1) x v2
   = t_update m x v2.
 Proof.
+
   (* FILL IN HERE *) Admitted.
 (** [] *)
 
@@ -238,8 +245,14 @@ Proof.
 
 Lemma beq_idP : forall x y, reflect (x = y) (beq_id x y).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  case_eq (beq_id x y); intros.
+  + rewrite beq_id_true_iff in H.
+    apply ReflectT, H.
+  + rewrite beq_id_false_iff in H.
+    apply ReflectF, H.
+Qed.
+  
 
 (** Now, given [id]s [x1] and [x2], we can use the [destruct (beq_idP
     x1 x2)] to simultaneously perform case analysis on the result of
@@ -263,14 +276,48 @@ Proof.
     function: If we update a map [m] at two distinct keys, it doesn't
     matter in which order we do the updates. *)
 
+Lemma beq_id_symm: forall (x y: id), x = y -> y = x.
+Proof.
+  intros [m] [n].
+  intros; inversion H; reflexivity.
+Qed.
+
+Lemma beq_id_symm_neg: forall (x y: id), x <> y -> y <> x.
+Proof.
+  intros [m] [n].
+  intros; intuition.
+Qed.
+
 Theorem t_update_permute : forall (X:Type) v1 v2 x1 x2
                              (m : total_map X),
   x2 <> x1 ->
     (t_update (t_update m x2 v2) x1 v1)
   = (t_update (t_update m x1 v1) x2 v2).
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
+  intros.
+  apply functional_extensionality.
+  intros.
+  case_eq (beq_id x x1); case_eq (beq_id x x2); intros.
+  + rewrite beq_id_true_iff in H0, H1.
+    rewrite H1 in H0.
+    apply beq_id_symm in H0; intuition.
+  + assert (x2 <> x). apply beq_id_false_iff, beq_id_symm_neg in H0; apply H0.
+    assert (x1 = x). apply beq_id_true_iff, beq_id_symm in H1; apply H1.
+    apply beq_id_false_iff in H2; apply beq_id_true_iff in H3.
+    inversion H1; unfold t_update.
+    rewrite H2, H3; reflexivity.
+  + assert (x1 <> x). apply beq_id_false_iff, beq_id_symm_neg in H1; apply H1.
+    assert (x2 = x). apply beq_id_true_iff, beq_id_symm in H0; apply H0.
+    apply beq_id_false_iff in H2; apply beq_id_true_iff in H3.
+    inversion H1; unfold t_update.
+    rewrite H2, H3; reflexivity.
+  + assert (x1 <> x). apply beq_id_false_iff, beq_id_symm_neg in H1; apply H1.
+    assert (x2 <> x). apply beq_id_false_iff, beq_id_symm_neg in H0; apply H0.
+    apply beq_id_false_iff in H2; apply beq_id_false_iff in H3.
+    inversion H1; unfold t_update.
+    rewrite H2, H3; reflexivity.
+Qed.
+
 
 (* ################################################################# *)
 (** * Partial maps *)
